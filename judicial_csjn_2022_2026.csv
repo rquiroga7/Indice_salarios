@@ -1,0 +1,45 @@
+event_order,date,increase_pct,scale_total,doc_id,published_date,detail,source_url
+0,2022-01-01,,1.0101209554718144e+52,132031,2022-03-07,Escala salarial vigente a partir de Enero de 2022,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+1,2022-04-01,0.0011974358234967397,1.0101330510219957e+52,133161,2022-05-11,Escala salarial vigente a partir de Abril de 2022,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+2,2022-05-01,0.001317163138669919,1.0101463561221953e+52,133845,2022-05-31,Escala salarial vigente a partir de Mayo de 2022.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+3,2022-07-01,900.0130397443081,1.010159528172393e+53,135027,2022-09-01,Escala salarial vigente a partir de Julio de 2022.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+4,2022-09-01,0.0009475424303406754,1.0101690998625364e+53,135029,2022-09-01,Escala salarial vigente a partir de Septiembre de 2022.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+5,2022-12-01,0.0033479513986467424,1.0102029198330439e+53,136482,2022-12-01,Escala salarial vigente a partir de Diciembre de 2022,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+6,2023-01-01,0.10019523506721306,1.0112150950232264e+53,137194,2023-03-20,Escala salarial vigente a partir de Enero de 2023,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+7,2023-02-01,0.0014889661259953613,1.0112301516734522e+53,137195,2023-03-20,Escala salarial vigente a partir de Febrero de 2023,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+8,2023-03-01,-0.0976376800252754,1.010242810013642e+53,137196,2023-03-20,Escala salaria vigente a partir de Marzo de 2023,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+9,2023-04-01,0.10114923760893291,1.01126466291397e+53,138126,2023-06-07,Escala salarial vigente a partir de Abril de 2023,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+10,2023-05-01,900.0235543287835,1.0112884825743272e+54,138131,2023-06-07,Escala salarial vigente a partir de Mayo de 2023,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+11,2023-06-01,0.0025673614242549547,1.0113144460047167e+54,138132,2023-06-07,Escala salarial vigente a partir de Junio de 2023.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+12,2023-07-01,899.0313981832621,1.0103348849950232e+55,139558,2023-09-08,Escala salarial vigente a partir de Julio de 2023.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+13,2023-08-01,0.10295459614937386,1.011375071195626e+55,139983,2023-10-11,Escala salarial vigente a partir de Agosto de 2023.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+14,2023-09-01,899.0483324071855,1.0104125783161887e+56,139984,2023-10-11,Escala salarial vigente a partir de Septiembre de 2023.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+15,2023-10-01,0.003879102599158024,1.0104517732567764e+56,140818,2023-12-01,Escala salarial vigente a partir de Octubre de 2023.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+16,2023-11-01,0.004471003156547582,1.0104969505874541e+56,140833,2023-12-02,Escala salarial vigente a partir de Noviembre de 2023.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+17,2023-12-01,0.006147353625918228,1.010559069408386e+56,141194,2024-02-01,Escala salarial vigente a partir de Diciembre de 2023.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+18,2024-01-01,0.00995810087267568,1.0106597018998955e+56,141348,2024-02-20,Escala salarial vigente a partir de Enero 2024.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+19,2024-02-01,900.0783292547077,1.0107388661211084e+57,141961,2024-04-04,Escala salaria vigente a partir de Febrero 2024.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+20,2024-03-01,0.005848126758545291,1.010797975411197e+57,142341,2024-04-30,Escala salaria vigente a partir de Marzo 2024.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+21,2024-04-01,0.005526156704172003,1.0108538336912808e+57,142998,2024-06-06,Escala salarial vigente a partir de Abril 2024.,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+22,2024-05-01,0.10247386669852698,1.0118896947013346e+57,143493,2024-07-19,Escala Salarial vigente a partir de Mayo 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+23,2024-06-01,-0.09512915142673162,1.0109270926213906e+57,143494,2024-07-19,Escala Salarial vigente a partir de Junio de 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+24,2024-07-01,0.10212570595684589,1.0119595090514393e+57,144498,2024-09-10,Escala Salarial vigente a partir de Julio de 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+25,2024-08-01,-0.09597367496128051,1.0109882943214825e+57,144499,2024-09-10,Escala Salarial vigente a partir de Agosto de 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+26,2024-09-01,899.1221576893461,1.0101008060211513e+58,145390,2024-11-05,Escala Salarial vigente a partir de Septiembre de 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+27,2024-10-01,0.09924951500164259,1.011103326172155e+58,146295,2024-12-17,Escala salarial vigente a partir de Octubre 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+28,2024-11-01,0.00025547873663267495,1.0111059093261589e+58,146297,2024-12-17,Escala salarial vigente a partir de Noviembre 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+29,2024-12-01,0.00020949210004506114,1.011108027513162e+58,146298,2024-12-17,Escala salarial vigente a partir de Diciembre 2024,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+30,2025-01-01,-0.0987090872428098,1.010109972008165e+58,147333,2025-03-14,Escala salarial vigente a partir de Enero 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+31,2025-02-01,0.00021774262843887726,1.0101121714481682e+58,147879,2025-04-24,Escala Salarial vigente a partir de Febrero 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+32,2025-03-01,0.0002776212467914263,1.0101149757341724e+58,148433,2025-05-21,Escala Salarial vigente a partir de Marzo 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+33,2025-04-01,0.0002504136721759309,1.0101175052001763e+58,148918,2025-06-12,Escala Salarial vigente a partir de Abril 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+34,2025-05-01,0.00015122676266798862,1.0101190327681785e+58,149275,2025-07-03,Escala Salarial vigente a partir de Mayo 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+35,2025-06-01,0.00018854451220295942,1.0101209372921815e+58,149857,2025-08-04,Escala Salarial vigente a partir de Junio 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+36,2025-07-01,0.00022747860366489903,1.0101232351011848e+58,150202,2025-08-22,Escala Salarial vigente a partir de Julio 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+37,2025-08-01,0.00023180013311030478,1.0101255765681884e+58,150889,2025-09-25,Escala Salarial vigente a partir de Agosto 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+38,2025-09-01,0.00026106734301034606,1.0101282136761923e+58,151545,2025-10-30,Escala Salarial vigente a partir de Septiembre 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+39,2025-10-01,0.0002919347231955527,1.0101311625911968e+58,152195,2025-11-27,Escala Salarial vigente a partir de Octubre 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+40,2025-11-01,0.0006920849756175684,1.0101381535572072e+58,152533,2025-12-15,Escala Salarial vigente a partir de Noviembre 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+41,2025-12-01,0.0003829476188155212,1.0101420218572131e+58,153074,2026-02-09,Escala Salarial vigente a partir de Diciembre 2025,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+42,2026-01-01,0.0004077282121706105,1.0101461404912192e+58,153455,2026-03-03,Escala salarial vigente a partir de Enero 2026,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
+43,2026-02-01,0.0004195505814985623,1.0101503785652256e+58,157913,2026-03-30,Escala salarial vigente a partir de Febrero 2026,https://www.csjn.gov.ar/transparencia/personal-judicial/escala-salarial
