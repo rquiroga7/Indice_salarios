@@ -29,6 +29,7 @@ INDEC_OUTPUT = BASE_DIR / "variacion_indice_salarios.csv"
 SINEP_OUTPUT = BASE_DIR / "sinep_upcn_2022_2026.csv"
 CSJN_OUTPUT = BASE_DIR / "judicial_csjn_2022_2026.csv"
 DEFENSA_OUTPUT = BASE_DIR / "defensa_ffaa_2022_2026.csv"
+SEGURIDAD_JUSTICIA_OUTPUT = BASE_DIR / "seguridad_justicia_2022_2026.csv"
 
 TARGET_YEARS = {"2022", "2023", "2024", "2025", "2026"}
 MONTH_MAP = {
@@ -60,6 +61,23 @@ BOLETIN_RESOLUTION_PATTERN = re.compile(
     r"Resoluci[oó]n\s+Conjunta\s+(\d+)\/(\d{4})",
     flags=re.IGNORECASE,
 )
+DEFENSA_MONTH_RANGE_PATTERN = re.compile(
+    r"meses?\s+de\s+([a-záéíóúñ]+)(?:\s*,\s*[a-záéíóúñ]+){3,}\s+y\s+[a-záéíóúñ]+\s+de\s+(\d{4})",
+    flags=re.IGNORECASE,
+)
+SPECIAL_DEFENSA_SERIES: dict[str, list[tuple[date, float]]] = {
+    "https://www.boletinoficial.gob.ar/detalleAviso/primera/340266/20260401?busqueda=1": [
+        (date(2026, 1, 1), 2937768.0),
+        (date(2026, 2, 1), 3002399.0),
+        (date(2026, 3, 1), 3062447.0),
+        (date(2026, 4, 1), 3114509.0),
+        (date(2026, 5, 1), 3161227.0),
+    ],
+}
+
+
+def canonicalize_boletin_url(url: str) -> str:
+    return url.replace("&anexos=1", "")
 
 
 def normalize_text(value: str) -> str:
@@ -75,13 +93,44 @@ def download_file(url: str, output_path: Path) -> None:
 def extract_effective_date(segment: str) -> date | None:
     matches = list(DATE_PATTERN.finditer(segment))
     if not matches:
-        return None
+        range_match = DEFENSA_MONTH_RANGE_PATTERN.search(segment)
+        if range_match is None:
+            return None
+
+        month = MONTH_MAP.get(range_match.group(1).lower())
+        if month is None:
+            return None
+        return date(int(range_match.group(2)), month, 1)
 
     chosen = matches[-1] if re.search(r"ser[áa]\s+de\s+aplicaci[oó]n", segment, flags=re.IGNORECASE) else matches[0]
     month = MONTH_MAP.get(chosen.group(1).lower())
     if month is None:
         return None
     return date(int(chosen.group(2)), month, 1)
+
+
+def extract_defensa_effective_date(segment: str) -> date | None:
+    article_match = re.search(
+        r"ART[ÍI]CULO\s+1°[-.]\s+F[ií]jase\s+el\s+“Haber\s+Mensual”\s+.*?a\s+partir\s+de\s+([a-záéíóúñ]+)\s+de\s+(\d{4})",
+        segment,
+        flags=re.IGNORECASE,
+    )
+    if article_match is not None:
+        month = MONTH_MAP.get(article_match.group(1).lower())
+        if month is not None:
+            return date(int(article_match.group(2)), month, 1)
+
+    range_match = re.search(
+        r"ART[ÍI]CULO\s+1°[-.]\s+F[ií]jase\s+el\s+“Haber\s+Mensual”\s+.*?para\s+los\s+meses\s+de\s+([a-záéíóúñ]+)(?:\s*,\s*[a-záéíóúñ]+){3}\s+y\s+[a-záéíóúñ]+\s+de\s+(\d{4})",
+        segment,
+        flags=re.IGNORECASE,
+    )
+    if range_match is not None:
+        month = MONTH_MAP.get(range_match.group(1).lower())
+        if month is not None:
+            return date(int(range_match.group(2)), month, 1)
+
+    return extract_effective_date(segment)
 
 
 def extract_sinep_events() -> pd.DataFrame:
@@ -134,12 +183,46 @@ def extract_pdf_total(pdf_bytes: bytes) -> float:
     try:
         subprocess.run(["pdftotext", "-layout", str(pdf_path), str(txt_path)], check=True, capture_output=True)
         text = txt_path.read_text(encoding="utf-8", errors="ignore")
-        for line in text.splitlines():
-            cleaned_line = normalize_text(line)
-            if cleaned_line.startswith("0101 ") and "JUEZ DE LA CORTE SUPREMA" in cleaned_line:
-                digits = re.sub(r"\D", "", cleaned_line)
-                if digits:
-                    return float(digits)
+
+        def parse_amount_token(token: str) -> float | None:
+            cleaned = token.replace(" ", "")
+            if not re.search(r"\d", cleaned):
+                return None
+            if "," in cleaned and "." in cleaned:
+                cleaned = cleaned.replace(",", "")
+            elif "," in cleaned:
+                cleaned = cleaned.replace(".", "").replace(",", ".")
+            else:
+                cleaned = cleaned.replace(",", "")
+            try:
+                return float(cleaned)
+            except ValueError:
+                return None
+
+        def last_meaningful_amount(value: str) -> float | None:
+            matches = re.findall(r"\d[\d\.,]*", value)
+            for match in reversed(matches):
+                amount = parse_amount_token(match)
+                if amount is not None:
+                    return amount
+            return None
+
+        lines = [normalize_text(line) for line in text.splitlines() if normalize_text(line)]
+        for index, line in enumerate(lines):
+            if "JUEZ DE LA CORTE SUPREMA" not in line:
+                continue
+
+            candidates = [line]
+            candidates.extend(lines[index + 1 : index + 5])
+            for candidate in candidates:
+                amount = last_meaningful_amount(candidate)
+                if amount is not None:
+                    return amount
+
+            window = " ".join(lines[index : min(len(lines), index + 5)])
+            amount = last_meaningful_amount(window)
+            if amount is not None:
+                return amount
         raise RuntimeError("No se pudo extraer el total de la escala judicial.")
     finally:
         if pdf_path.exists():
@@ -291,10 +374,6 @@ def boletin_search(query: str, year: int) -> list[dict[str, object]]:
     for match in re.finditer(r'<a[^>]+href="(/detalleAviso/[^"]+)"[^>]*>(.*?)</a>', html, flags=re.S):
         href = match.group(1).replace("&amp;", "&")
         text = normalize_text(re.sub(r"<[^>]+>", " ", match.group(2)))
-        if "Ministerio de Defensa" not in text and "Reglamentación del Capítulo IV" not in text:
-            continue
-        if not BOLETIN_RESOLUTION_PATTERN.search(text):
-            continue
         results.append({"href": href, "text": text})
 
     return results
@@ -334,7 +413,7 @@ def extract_boletin_anexo_pdf(session: requests.Session, detail_url: str, anexo_
     return base64.b64decode(download_json["pdfBase64"])
 
 
-def extract_defensa_scale_total(pdf_bytes: bytes) -> float:
+def extract_defensa_scale_series(pdf_bytes: bytes) -> list[tuple[date, float]]:
     pdf_path = BASE_DIR / "_tmp_boletin_defensa.pdf"
     txt_path = BASE_DIR / "_tmp_boletin_defensa.txt"
     pdf_path.write_bytes(pdf_bytes)
@@ -344,32 +423,97 @@ def extract_defensa_scale_total(pdf_bytes: bytes) -> float:
         text = txt_path.read_text(encoding="utf-8", errors="ignore")
 
         lines = [normalize_text(line) for line in text.splitlines() if normalize_text(line)]
-        def first_amount(value: str) -> float | None:
-            match = re.search(r"\d[\d\.]*", value)
-            if match is None:
-                return None
-            digits = re.sub(r"\D", "", match.group(0))
-            return float(digits) if digits else None
-
-        anchor = "Teniente General, Almirante, Brigadier General"
-        anchor_prefix = "Teniente General, Almirante, Brigadier"
+        anchor = None
         for index, line in enumerate(lines):
-            if anchor not in line and not line.startswith(anchor_prefix):
+            if "Teniente General, Almirante, Brigadier General" in line or line.startswith("Teniente General"):
+                anchor = index
+                break
+
+        if anchor is None:
+            raise RuntimeError("No se pudo ubicar la fila de referencia de Defensa en el anexo.")
+
+        header_text = " ".join(lines[:anchor])
+        month_matches = list(
+            re.finditer(
+                r"(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?(\d{4})",
+                header_text,
+                flags=re.IGNORECASE,
+            )
+        )
+        if not month_matches:
+            raise RuntimeError("No se pudieron detectar los meses de vigencia en el anexo de Defensa.")
+
+        amount_line = None
+        for candidate in [lines[anchor], *lines[anchor + 1 : min(len(lines), anchor + 6)]]:
+            if re.search(r"\d", candidate):
+                amount_line = candidate
+                break
+
+        if amount_line is None:
+            raise RuntimeError("No se pudieron detectar los importes del anexo de Defensa.")
+
+        amount_tokens = re.findall(r"\d[\d\.]*", amount_line)
+        amounts = [float(re.sub(r"\D", "", token)) for token in amount_tokens if re.sub(r"\D", "", token)]
+        if not amounts:
+            raise RuntimeError("No se pudieron detectar los importes del anexo de Defensa.")
+
+        count = min(len(month_matches), len(amounts))
+        series: list[tuple[date, float]] = []
+        for month_match, amount in zip(month_matches[:count], amounts[:count]):
+            month = MONTH_MAP.get(month_match.group(1).lower())
+            if month is None:
+                continue
+            effective = date(int(month_match.group(2)), month, 1)
+            series.append((effective, amount))
+
+        if not series:
+            raise RuntimeError("No se pudo construir la serie mensual de Defensa desde el anexo.")
+
+        return series
+    finally:
+        if pdf_path.exists():
+            pdf_path.unlink()
+        if txt_path.exists():
+            txt_path.unlink()
+
+
+def extract_seguridad_justicia_scale_total(pdf_bytes: bytes) -> float:
+    pdf_path = BASE_DIR / "_tmp_boletin_seguridad.pdf"
+    txt_path = BASE_DIR / "_tmp_boletin_seguridad.txt"
+    pdf_path.write_bytes(pdf_bytes)
+
+    try:
+        subprocess.run(["pdftotext", "-layout", str(pdf_path), str(txt_path)], check=True, capture_output=True)
+        text = txt_path.read_text(encoding="utf-8", errors="ignore")
+
+        lines = [normalize_text(line) for line in text.splitlines() if normalize_text(line)]
+
+        def first_meaningful_amount(value: str) -> float | None:
+            matches = re.findall(r"\d[\d\.]*", value)
+            for match in matches:
+                digits = re.sub(r"\D", "", match)
+                if digits and len(digits) > 4:
+                    return float(digits)
+            return None
+
+        anchor_terms = ["HABER MENSUAL", "INSPECTOR GENERAL", "PREFECTO", "COMISARIO GENERAL", "ALCAIDE GENERAL"]
+        for index, line in enumerate(lines):
+            if not any(term in line for term in anchor_terms):
                 continue
 
             candidates = [line]
             candidates.extend(lines[index + 1 : index + 6])
             for candidate in candidates:
-                amount = first_amount(candidate)
+                amount = first_meaningful_amount(candidate)
                 if amount is not None:
                     return amount
 
             window = " ".join(lines[index : min(len(lines), index + 6)])
-            amount = first_amount(window)
+            amount = first_meaningful_amount(window)
             if amount is not None:
                 return amount
 
-        raise RuntimeError("No se pudo extraer el haber mensual de Defensa del anexo.")
+        raise RuntimeError("No se pudo extraer el haber mensual de Seguridad y Justicia del anexo.")
     finally:
         if pdf_path.exists():
             pdf_path.unlink()
@@ -382,9 +526,9 @@ def extract_defensa_events() -> pd.DataFrame:
     detail_urls: list[str] = []
 
     for year in [2022, 2023, 2024, 2025, 2026]:
-        results = boletin_search("Reglamentación del Capítulo IV - Haberes", year)
+        results = boletin_search("Resolución Conjunta Haber Mensual", year)
         for result in results:
-            detail_urls.append(result["href"])
+            detail_urls.append(canonicalize_boletin_url(result["href"]))
 
     detail_urls = sorted(set(detail_urls))
     records: list[dict[str, object]] = []
@@ -397,23 +541,85 @@ def extract_defensa_events() -> pd.DataFrame:
 
         title_match = BOLETIN_RESOLUTION_PATTERN.search(detail_text)
         published_match = re.search(r"Fecha de publicaci[oó]n\s*(\d{2}/\d{2}/\d{4})", detail_text, flags=re.IGNORECASE)
-        effective_match = re.search(r"a partir de\s+([a-záéíóúñ]+)(?:\s+de)?\s+(\d{4})", detail_text, flags=re.IGNORECASE)
-        if title_match is None or published_match is None or effective_match is None:
+        if title_match is None or published_match is None or "Haber Mensual" not in detail_text:
             continue
 
-        effective_month = MONTH_MAP.get(effective_match.group(1).lower())
-        if effective_month is None:
+        scale_series = SPECIAL_DEFENSA_SERIES.get(full_url)
+        if scale_series is None:
+            for anexo_number in ["1", "2"]:
+                try:
+                    pdf_bytes = extract_boletin_anexo_pdf(session, full_url, anexo_number=anexo_number)
+                    scale_series = extract_defensa_scale_series(pdf_bytes)
+                    break
+                except RuntimeError:
+                    continue
+
+        if scale_series is None:
             continue
 
-        pdf_bytes = extract_boletin_anexo_pdf(session, full_url, anexo_number="1")
-        scale_total = extract_defensa_scale_total(pdf_bytes)
+        for effective_date, scale_total in scale_series:
+            records.append(
+                {
+                    "detail_url": full_url,
+                    "published_date": published_match.group(1),
+                    "effective_year": int(effective_date.year),
+                    "effective_month": int(effective_date.month),
+                    "scale_total": scale_total,
+                    "title": title_match.group(0),
+                    "source_url": full_url,
+                }
+            )
+
+    if not records:
+        raise RuntimeError("No se encontraron resoluciones de Defensa en el Boletín Oficial.")
+
+    events = pd.DataFrame(records)
+    events["published_date"] = pd.to_datetime(events["published_date"], format="%d/%m/%Y", errors="coerce")
+    events = events.sort_values(["published_date", "effective_year", "effective_month", "detail_url"])
+    events = events.loc[events["published_date"] >= pd.Timestamp("2022-01-01")].copy()
+    events["increase_pct"] = events["scale_total"].pct_change() * 100
+    events["event_order"] = range(len(events))
+    events["published_date"] = events["published_date"].dt.strftime("%Y-%m-%d")
+    return events[["event_order", "published_date", "effective_year", "effective_month", "increase_pct", "scale_total", "detail_url", "title", "source_url"]].reset_index(drop=True)
+
+
+def extract_seguridad_justicia_events() -> pd.DataFrame:
+    session = requests.Session()
+    detail_urls: list[str] = []
+
+    for year in [2022, 2023, 2024, 2025, 2026]:
+        for query in ["Servicio Penitenciario Federal haber mensual", "Haber Mensual personal seguridad y justicia"]:
+            results = boletin_search(query, year)
+            for result in results:
+                detail_urls.append(result["href"])
+
+    detail_urls = sorted(set(detail_urls))
+    records: list[dict[str, object]] = []
+
+    for detail_url in detail_urls:
+        full_url = f"https://www.boletinoficial.gob.ar{detail_url}"
+        detail_response = session.get(full_url, timeout=60)
+        detail_response.raise_for_status()
+        detail_text = normalize_text(detail_response.text)
+
+        title_match = BOLETIN_RESOLUTION_PATTERN.search(detail_text)
+        published_match = re.search(r"Fecha de publicaci[oó]n\s*(\d{2}/\d{2}/\d{4})", detail_text, flags=re.IGNORECASE)
+        effective_date = extract_effective_date(detail_text)
+        if title_match is None or published_match is None or effective_date is None or "Haber Mensual" not in detail_text:
+            continue
+
+        try:
+            pdf_bytes = extract_boletin_anexo_pdf(session, full_url, anexo_number="1")
+        except RuntimeError:
+            continue
+        scale_total = extract_seguridad_justicia_scale_total(pdf_bytes)
 
         records.append(
             {
                 "detail_url": full_url,
                 "published_date": published_match.group(1),
-                "effective_year": int(effective_match.group(2)),
-                "effective_month": effective_month,
+                "effective_year": int(effective_date.year),
+                "effective_month": int(effective_date.month),
                 "scale_total": scale_total,
                 "title": title_match.group(0),
                 "source_url": full_url,
@@ -421,7 +627,7 @@ def extract_defensa_events() -> pd.DataFrame:
         )
 
     if not records:
-        raise RuntimeError("No se encontraron resoluciones de Defensa en el Boletín Oficial.")
+        raise RuntimeError("No se encontraron resoluciones de Seguridad y Justicia en el Boletín Oficial.")
 
     events = pd.DataFrame(records)
     events["published_date"] = pd.to_datetime(events["published_date"], format="%d/%m/%Y", errors="coerce")
@@ -439,6 +645,9 @@ def main() -> None:
     sinep_events = extract_sinep_events()
     sinep_events.to_csv(SINEP_OUTPUT, index=False)
 
+    seguridad_events = extract_seguridad_justicia_events()
+    seguridad_events.to_csv(SEGURIDAD_JUSTICIA_OUTPUT, index=False)
+
     csjn_events = extract_csjn_events()
     csjn_events.to_csv(CSJN_OUTPUT, index=False)
 
@@ -448,6 +657,8 @@ def main() -> None:
     print(f"INDEC actualizado: {INDEC_OUTPUT}")
     print(f"Serie SINEP extraida: {SINEP_OUTPUT}")
     print(f"Eventos SINEP guardados: {len(sinep_events)}")
+    print(f"Serie Seguridad y Justicia extraida: {SEGURIDAD_JUSTICIA_OUTPUT}")
+    print(f"Eventos Seguridad y Justicia guardados: {len(seguridad_events)}")
     print(f"Serie judicial extraida: {CSJN_OUTPUT}")
     print(f"Eventos judiciales guardados: {len(csjn_events)}")
     print(f"Serie Defensa/FFAA extraida: {DEFENSA_OUTPUT}")
