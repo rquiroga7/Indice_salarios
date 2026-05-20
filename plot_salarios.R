@@ -147,12 +147,17 @@ line_long <- bind_rows(
   mensual %>% transmute(fecha, serie = "Defensa", valor = defensa_indice_base100),
   mensual %>% transmute(fecha, serie = "Seguridad y justicia", valor = seguridad_y_justicia_indice_base100),
   mensual %>% transmute(fecha, serie = "Indice salarial calculado", valor = indice_salarial_calculado)
-)
+) %>%
+  filter(fecha >= as.Date("2023-11-01"), fecha <= as.Date("2026-03-01")) %>%
+  group_by(serie) %>%
+  mutate(base_nov_2023 = valor[match(as.Date("2023-11-01"), fecha)], valor = 100 * valor / base_nov_2023) %>%
+  ungroup() %>%
+  select(-base_nov_2023)
 
 plot_barras <- ggplot(bar_long, aes(x = fecha, y = valor)) +
   geom_col(fill = "#4f46e5", alpha = 0.8, width = 25) +
   facet_wrap(~serie, ncol = 1, scales = "free_y") +
-  scale_x_date(limits = c(as.Date("2023-11-01"), as.Date("2026-03-01")), date_breaks = "6 months", date_labels = "%b\n%Y") +
+  scale_x_date(limits = c(as.Date("2023-11-01"), as.Date("2026-03-01")), breaks = seq(as.Date("2023-11-01"), as.Date("2026-03-01"), by = "2 months"), date_labels = "%b\n%Y") +
   labs(
     title = "Variacion mensual de los indices salariales",
     subtitle = "INDEC, SINEP, universitarios, defensa, seguridad y justicia e indice salarial calculado",
@@ -185,11 +190,11 @@ plot_lineas <- ggplot(line_long, aes(x = fecha, y = valor, color = serie)) +
     "Seguridad y justicia" = "solid",
     "Indice salarial calculado" = "dashed"
   )) +
-  scale_x_date(date_breaks = "6 months", date_labels = "%b\n%Y") +
+  scale_x_date(limits = c(as.Date("2023-11-01"), as.Date("2026-03-01")), date_breaks = "6 months", date_labels = "%b\n%Y") +
   scale_y_continuous(labels = function(x) formatC(x, format = "f", digits = 1, decimal.mark = ",")) +
   labs(
     title = "Indices salariales base 100",
-    subtitle = "Comparacion de componentes, indice real de INDEC e indice salarial calculado",
+    subtitle = "Base 100 en noviembre de 2023, de noviembre de 2023 a marzo de 2026",
     x = NULL,
     y = "Base 100",
     color = NULL,
