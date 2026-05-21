@@ -17,6 +17,7 @@ defensa_path <- file.path(base_dir, "defensa_ffaa_2022_2026.csv")
 seguridad_justicia_path <- file.path(base_dir, "judicial_csjn_2022_2026.csv")
 
 componentes_csv <- file.path(base_dir, "salarios_componentes_2022_2026.csv")
+variacion_mensual_csv <- file.path(base_dir, "variacion_mensual_2022_2026.csv")
 barras_path <- file.path(base_dir, "salarios_componentes_variacion_barras_2022_2026.png")
 lineas_path <- file.path(base_dir, "salarios_componentes_indices_lineas_2022_2026.png")
 comparacion_path <- file.path(base_dir, "indice_indec_vs_calculado_rebase_2023_11_2026_03.png")
@@ -130,6 +131,19 @@ mensual <- tibble(fecha = seq.Date(min(fechas), max(fechas), by = "month")) %>%
   )
 
 write_csv(mensual, componentes_csv)
+write_csv(
+  mensual %>%
+    select(
+      fecha,
+      indec_publico_nacional,
+      sinep,
+      universitarios,
+      defensa,
+      seguridad_y_justicia,
+      indice_salarial_calculado_variacion
+    ),
+  variacion_mensual_csv
+)
 
 bar_long <- bind_rows(
   mensual %>% transmute(fecha, serie = "INDEC sector publico nacional", valor = indec_publico_nacional),
